@@ -36,6 +36,43 @@ WORKSPACE = BASE_DIR / "workspace"
 
 st.set_page_config(page_title="论文规范与引用检查助手", page_icon="📑", layout="wide")
 
+# 界面字体放大（答辩投屏可读）：主区域 17px、侧边栏 16px、小字说明不低于 14px
+st.markdown(
+    """
+    <style>
+    /* 主区域正文与聊天消息 */
+    .stApp { font-size: 17px; }
+    .stMarkdown, .stMarkdown p, .stMarkdown li {
+        font-size: 17px !important; line-height: 1.65;
+    }
+    .stChatMessage { font-size: 17px; }
+    /* 聊天输入框 */
+    [data-testid="stChatInputTextArea"] { font-size: 17px !important; }
+    /* 代码块 / 工具入参与返回结果 */
+    .stCodeBlock pre, [data-testid="stCode"] pre, pre, code {
+        font-size: 14px !important; line-height: 1.55;
+    }
+    /* 侧边栏整体（历史会话、上传、产出文件） */
+    [data-testid="stSidebar"] { font-size: 16px; }
+    [data-testid="stSidebar"] button { font-size: 16px !important; }
+    [data-testid="stSidebar"] p, [data-testid="stSidebar"] span,
+    [data-testid="stSidebar"] label, [data-testid="stSidebar"] li {
+        font-size: 16px !important;
+    }
+    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3 { font-size: 1.15rem !important; }
+    /* 原本很小的灰色说明文字 */
+    [data-testid="stCaptionContainer"], .stCaption, small {
+        font-size: 14px !important;
+    }
+    /* 执行过程折叠面板与状态条 */
+    [data-testid="stExpander"] summary { font-size: 16px !important; }
+    [data-testid="stStatus"] { font-size: 15px; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 
 # ------------------------------------------------------------------
 # 后台事件循环 + Agent（整个进程只创建一次，所有浏览器标签页共享）
