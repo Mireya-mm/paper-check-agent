@@ -243,12 +243,28 @@ with st.sidebar:
     for p in files:
         rel = p.relative_to(WORKSPACE).as_posix()
         with st.expander(rel):
-            content = p.read_text(encoding="utf-8", errors="replace")
-            st.download_button("下载", content, file_name=p.name, key=f"dl-{rel}", use_container_width=True)
+            # 下载用原始字节，避免二进制文件（xlsx）被按文本解码成乱码
+            st.download_button("下载", p.read_bytes(), file_name=p.name, key=f"dl-{rel}", use_container_width=True)
             if p.suffix == ".md":
-                st.markdown(content)
+                st.markdown(p.read_text(encoding="utf-8", errors="replace"))
+            elif p.suffix == ".xlsx":
+                # Excel 在线预览：用 openpyxl 读出每个工作表渲染成表格
+                try:
+                    import pandas as pd
+                    from openpyxl import load_workbook
+
+                    wb = load_workbook(p, read_only=True)
+                    for ws in wb.worksheets:
+                        rows = [r for r in ws.iter_rows(values_only=True) if any(c is not None for c in r)]
+                        st.caption(f"工作表：{ws.title}")
+                        if rows:
+                            header, *body = rows
+                            st.dataframe(pd.DataFrame(body, columns=header), use_container_width=True, hide_index=True)
+                    wb.close()
+                except Exception:
+                    st.caption("（二进制 Excel 文件，请点击上方按钮下载查看）")
             else:
-                st.code(content)
+                st.code(p.read_text(encoding="utf-8", errors="replace"))
 
 
 # ------------------------------------------------------------------
@@ -291,7 +307,8 @@ if question:
         st.markdown(question)
 
     with st.chat_message("assistant"):
-        status = st.status("思考中……", expanded=False)
+        # expanded=True：生成期间保持展开，工具调用与返回实时可见（演示投屏关键）
+        status = st.status("思考中……", expanded=True)
         placeholder = st.empty()
         text, steps, answer = "", [], ""
 
@@ -307,7 +324,11 @@ if question:
                 with status:
                     render_step(ev)
                 calls = sum(e["type"] == "tool_call" for e in steps)
-                status.update(label=f"工作中……已调用 {calls} 次工具", state="running")
+                status.update(
+                    label=f"工作中……已调用 {calls} 次工具（实时详情见上）",
+                    state="running",
+                    expanded=True,  # 每次工具事件都保持面板展开，实时可看
+                )
             elif kind == "error":
                 answer = (text + "\n\n" if text else "") + f"❌ 出错了：{ev['content']}"
             elif kind == "answer":
