@@ -287,13 +287,15 @@ def generate_report(results: str, fmt: str = "markdown") -> str:
 *本工具仅做格式与真实性检查，不代写、不生成论文正文。*
 """
     WORKSPACE.mkdir(exist_ok=True)
-    md_path = WORKSPACE / "引用校验报告.md"
+    # 文件名带时间戳：同一会话检查多篇论文时报告互不覆盖
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    md_path = WORKSPACE / f"引用校验报告_{stamp}.md"
     md_path.write_text(md, encoding="utf-8")
 
     paths = [str(md_path)]
     if "excel" in fmt.lower():
         try:
-            paths.append(_write_excel(body, ts))
+            paths.append(_write_excel(body, ts, stamp))
         except Exception as exc:  # noqa: BLE001
             md += f"\n\n> Excel 生成失败：{exc}（已生成 Markdown 报告）"
 
@@ -304,7 +306,7 @@ def generate_report(results: str, fmt: str = "markdown") -> str:
     }, ensure_ascii=False, indent=2)
 
 
-def _write_excel(body: str, ts: str) -> str:
+def _write_excel(body: str, ts: str, stamp: str) -> str:
     """把检查结果写成 Excel：一个"完整报告"工作表 + 一个"错误汇总"工作表。"""
     from openpyxl import Workbook
 
@@ -326,7 +328,7 @@ def _write_excel(body: str, ts: str) -> str:
     if n == 0:
         ws2.append([1, "未发现明显格式/真实性问题"])
 
-    xlsx_path = WORKSPACE / "引用校验报告.xlsx"
+    xlsx_path = WORKSPACE / f"引用校验报告_{stamp}.xlsx"
     wb.save(xlsx_path)
     return str(xlsx_path)
 
